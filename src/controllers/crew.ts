@@ -1,12 +1,10 @@
 import { Request, Response } from "express";
 import Crew from "../models/crew";
-import { saveImages } from "../utils/saveImages";
+import { uploadToCloudinary } from "../utils/cloudinary";
 
 export const createCrew = async (req: Request, res: Response) => {
   try {
     const { name, position, contact, email, description, status } = req.body;
-
-    const imageFile = (req.files as any)?.image?.[0];
 
     // Validate input
     if (!name || !position || !contact || !email || !description) {
@@ -25,7 +23,17 @@ export const createCrew = async (req: Request, res: Response) => {
       });
     }
 
-      const [imageUrl] = await saveImages([imageFile], { folder: "transfer" });
+    let imageUrl: string | undefined;
+    const imageFile = req.file;
+    if(imageFile) {
+      const result = await uploadToCloudinary(imageFile.buffer, {
+        folder: "crew",
+        width: 400,
+        height: 400,
+        crop: "fill",
+      })
+      imageUrl = result.secure_url;
+    }
 
     // Create crew member
     const crew = await Crew.create({ 
@@ -34,7 +42,7 @@ export const createCrew = async (req: Request, res: Response) => {
       contact, 
       email, 
       description,
-      image: imageUrl, // Default image if none provided
+      image: imageUrl,
       status: status || "active"
     });
 
@@ -149,10 +157,15 @@ export const updateCrew = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Handle image update if provided
-    const imageFile = (req.files as any)?.image?.[0];
+    const imageFile = req.file;
     if (imageFile) {
-      const [imageUrl] = await saveImages([imageFile], { folder: "transfer" });
-      updates.image = imageUrl;
+      const result = await uploadToCloudinary(imageFile.buffer, {
+        folder: "crew",
+        width: 400,
+        height: 400,
+        crop: "fill",
+      })
+      updates.image = result.secure_url;
     }
 
     const updatedCrew = await Crew.findByIdAndUpdate(

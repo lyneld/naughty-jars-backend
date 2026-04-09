@@ -1,6 +1,7 @@
 import Product from "../models/product";
 import { Request, Response } from "express";
 import { saveImages } from "../utils/saveImages";
+import { uploadToCloudinary } from "../utils/cloudinary";
 import mongoose from "mongoose";
 
 export const addProduct = async (req: Request, res: Response) => {
@@ -25,10 +26,18 @@ export const addProduct = async (req: Request, res: Response) => {
     
     // Check for uploaded files - now req.files is an array, not an object
     const files = req.files as Express.Multer.File[];
+
     if (files && files.length > 0) {
-      console.log(`Processing ${files.length} images`);
-      images = await saveImages(files, { folder: "products" });
-      console.log("Saved images:", images);
+      images = await Promise.all(
+        files.map((file) => 
+          uploadToCloudinary(file.buffer, {
+            folder: "products",
+            width: 800,
+            height: 800,
+            crop: "limit",
+          }).then((r) => r.secure_url)
+        )
+      );
     }
 
     // Validation
@@ -110,9 +119,18 @@ export const updateProduct = async (req: Request, res: Response) => {
     
     // Handle image uploads for update - now req.files is an array
     const files = req.files as Express.Multer.File[];
+
     if (files && files.length > 0) {
-      // Save new images
-      const newImages = await saveImages(files, { folder: "products" });
+      const newImages = await Promise.all(
+        files.map((file) => 
+          uploadToCloudinary(file.buffer, {
+            folder: "products",
+            width: 800,
+            height: 800,
+            crop: "limit",
+          }).then((r) => r.secure_url)
+        )
+      );
       
       // Get existing images from request or keep existing
       let existingImages: string[] = [];
@@ -126,6 +144,16 @@ export const updateProduct = async (req: Request, res: Response) => {
       
       // Combine existing and new images
       updates.images = [...existingImages, ...newImages];
+    } else {
+      if (req.body.existingImages) {
+        try {
+          updates.images = JSON.parse(req.body.existingImages);
+        } catch {
+          delete updates.images;
+        }
+      } else {
+        delete updates.images;
+      }
     }
     
     // Handle numeric fields

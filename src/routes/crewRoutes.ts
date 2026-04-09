@@ -10,7 +10,7 @@ import {
 } from "../controllers/crew";
 import { authenticateJWT } from "../middlewares/auth";
 import { requireAdmin } from "../middlewares/adminAuth";
-import { uploadImages } from "../middlewares/testMulter";
+import { upload } from "../middlewares/upload";
 
 const router = express.Router();
 
@@ -22,14 +22,14 @@ router.get("/:id", getCrewById);
 router.post("/", 
   authenticateJWT, // Add authentication
   requireAdmin, // Add admin check
-  uploadImages.fields([{ name: "image", maxCount: 1 }]),
+  upload.single("image"),
   createCrew
 );
 
 router.put("/:id", 
   authenticateJWT, // Add authentication
   requireAdmin, // Add admin check
-  uploadImages.fields([{ name: "image", maxCount: 1 }]),
+  upload.single("image"),
   updateCrew
 );
 

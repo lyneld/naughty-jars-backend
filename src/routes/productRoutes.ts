@@ -10,7 +10,7 @@ import {
 } from "../controllers/product";
 import { authenticateJWT } from "../middlewares/auth";
 import { requireAdmin } from "../middlewares/adminAuth";
-import { uploadImages } from "../middlewares/testMulter";
+import { upload } from "../middlewares/upload";
 
 const router = Router();
 
@@ -24,14 +24,14 @@ router.get("/:id", getProductDetails);
 router.post("/", 
   authenticateJWT, 
   requireAdmin, 
-  uploadImages.array('images', 10), // Changed from fields() to array()
+  upload.array('images', 10), // Changed from fields() to array()
   addProduct
 );
 
 router.put("/:id", 
   authenticateJWT, 
   requireAdmin, 
-  uploadImages.array('images', 10), // Changed from fields() to array()
+  upload.array('images', 10), // Changed from fields() to array()
   updateProduct
 );
 
