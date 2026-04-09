@@ -19,8 +19,8 @@ const seedAdmin = async () => {
     // ✅ PLAIN password — model will hash it
     await User.create({
       username: "admin",
-      email: "admin@gmail.com",
-      password: "Admin@123",
+      email: "admin@naughtyjars.com",
+      password: "NJars@123#",
       role: "admin",
     });
 

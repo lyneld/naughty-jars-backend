@@ -21,7 +21,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use(express.static(path.join(__dirname, '../public'))); 
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://naughtyjars.vercel.app","https://test.naughtyjars.com"],
+  origin: process.env.NODE_ENV === "production" 
+    ? process.env.FRONTEND_URL || true
+    : "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
@@ -32,7 +34,7 @@ app.use("/api/crew", crewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/blog", blogRoutes);
-app.use("/api/likes", likeRoutes) // Import like routes
+app.use("/api/likes", likeRoutes)
 
 app.get("/", (req, res) => {
   res.send("API is running...");
