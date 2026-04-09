@@ -4,8 +4,9 @@
   "description": "",
   "main": "/src/server.ts",
   "scripts": {
-    "dev": "ts-node src/server.ts",
-    "start": "nodemon --watch --exec ts-node --transpile-only src/server.ts",
+    "dev": "nodemon --watch src --exec ts-node --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed:admin": "ts-node src/adminSeeder.ts",
     "seed:products": "ts-node src/seedProducts.ts"
