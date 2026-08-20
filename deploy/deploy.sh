@@ -84,7 +84,7 @@ APP_CURRENT="${CURRENT_LINK}" pm2 startOrReload "${CURRENT_LINK}/backend/ecosyst
 
 ready=false
 for _attempt in {1..30}; do
-  if curl --fail --silent --show-error http://127.0.0.1:5000/api/health/ready >/dev/null; then
+  if curl --fail --silent --show-error http://127.0.0.1:5001/api/health/ready >/dev/null; then
     ready=true
     break
   fi

@@ -20,6 +20,6 @@ ln -sfn "${previous_release}" "${BASE_DIR}/.current-next"
 mv -Tf "${BASE_DIR}/.current-next" "${CURRENT_LINK}"
 ln -sfn "${current_release}" "${PREVIOUS_LINK}"
 APP_CURRENT="${CURRENT_LINK}" pm2 startOrReload "${CURRENT_LINK}/backend/ecosystem.config.cjs" --env production --update-env
-curl --fail --retry 20 --retry-delay 1 http://127.0.0.1:5000/api/health/ready
+curl --fail --retry 20 --retry-delay 1 http://127.0.0.1:5001/api/health/ready
 pm2 save
 echo "Rolled back to ${previous_release}"
