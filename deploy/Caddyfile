@@ -23,7 +23,7 @@
     }
 
     handle {
-        root * /srv/naughty-jars/current/frontend/dist
+        root * /var/www/naughty-jars/current/frontend/dist
 
         @fingerprinted path /assets/*
         header @fingerprinted Cache-Control "public, max-age=31536000, immutable"

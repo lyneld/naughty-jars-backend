@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-BASE_DIR="${BASE_DIR:-/srv/naughty-jars}"
+BASE_DIR="${BASE_DIR:-/var/www/naughty-jars}"
 CURRENT_LINK="${BASE_DIR}/current"
 PREVIOUS_LINK="${BASE_DIR}/previous"
 

@@ -1,4 +1,4 @@
-const current = process.env.APP_CURRENT || "/srv/naughty-jars/current";
+const current = process.env.APP_CURRENT || "/var/www/naughty-jars/current";
 
 module.exports = {
   apps: [{
@@ -20,7 +20,7 @@ module.exports = {
       NODE_ENV: "production",
       HOST: "127.0.0.1",
       PORT: "5000",
-      ENV_FILE: "/etc/naughty-jars/backend.env",
+      ENV_FILE: "/var/www/naughty-jars/backend.env",
     },
   }],
 };

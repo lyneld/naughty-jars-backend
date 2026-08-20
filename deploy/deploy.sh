@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-BASE_DIR="${BASE_DIR:-/srv/naughty-jars}"
+BASE_DIR="${BASE_DIR:-/var/www/naughty-jars}"
 RELEASES_DIR="${BASE_DIR}/releases"
 CURRENT_LINK="${BASE_DIR}/current"
 PREVIOUS_LINK="${BASE_DIR}/previous"
@@ -10,7 +10,7 @@ BACKEND_REPO="${BACKEND_REPO:-git@github.com:lyneld/naughty-jars-backend.git}"
 FRONTEND_REF="${FRONTEND_REF:-main}"
 BACKEND_REF="${BACKEND_REF:-main}"
 SITE_URL="${SITE_URL:?Set SITE_URL to the canonical https URL, without a trailing slash}"
-ENV_FILE="${ENV_FILE:-/etc/naughty-jars/backend.env}"
+ENV_FILE="${ENV_FILE:-${BASE_DIR}/backend.env}"
 RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)"
 RELEASE_DIR="${RELEASES_DIR}/${RELEASE_ID}"
 
@@ -26,7 +26,7 @@ if [[ "${SITE_URL}" != https://* || "${SITE_URL}" == */ ]]; then
   echo "SITE_URL must be an https URL without a trailing slash." >&2
   exit 1
 fi
-if [[ "${BASE_DIR}" != "/srv/naughty-jars" && "${ALLOW_CUSTOM_BASE_DIR:-false}" != "true" ]]; then
+if [[ "${BASE_DIR}" != "/var/www/naughty-jars" && "${ALLOW_CUSTOM_BASE_DIR:-false}" != "true" ]]; then
   echo "Refusing an unexpected BASE_DIR without ALLOW_CUSTOM_BASE_DIR=true." >&2
   exit 1
 fi
