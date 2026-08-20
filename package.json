@@ -2,42 +2,71 @@
   "name": "nj-server",
   "version": "1.0.0",
   "description": "",
-  "main": "/src/server.ts",
+  "main": "dist/server.js",
+  "engines": {
+    "node": ">=22.13 <23"
+  },
   "scripts": {
     "dev": "nodemon --watch src --exec ts-node --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "seed:admin": "ts-node src/adminSeeder.ts",
-    "seed:products": "ts-node src/seedProducts.ts"
+    "seed:products": "ts-node src/seedProducts.ts",
+    "audit:media": "ts-node src/auditMedia.ts",
+    "migrate:media": "ts-node src/auditMedia.ts --migrate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.10.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.1",
+    "multer": "^2.2.0",
+    "streamifier": "^0.1.1"
+  },
+  "devDependencies": {
     "@types/express": "^5.0.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "bcryptjs": "^3.0.2",
-    "cloudinary": "^2.8.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.20.0",
-    "mongoose": "^8.19.2",
-    "multer": "^2.0.2",
-    "nodemon": "^3.1.10",
-    "sharp": "^0.34.5",
-    "streamifier": "^0.1.1",
-    "uuid": "^13.0.0"
-  },
-  "devDependencies": {
     "@types/node": "^24.9.2",
     "@types/streamifier": "^0.1.2",
+    "@types/supertest": "^7.2.1",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "router": {
+      "path-to-regexp": "8.4.0"
+    },
+    "nodemon": {
+      "minimatch": {
+        ".": "3.1.4",
+        "brace-expansion": "1.1.18"
+      },
+      "chokidar": {
+        "anymatch": {
+          "picomatch": "2.3.2"
+        },
+        "readdirp": {
+          "picomatch": "2.3.2"
+        }
+      }
+    },
+    "ts-node": {
+      "diff": "4.0.4"
+    }
   }
 }

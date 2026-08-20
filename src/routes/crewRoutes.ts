@@ -3,6 +3,7 @@ import express from "express";
 import {
   createCrew,
   getAllCrew,
+  getPublicCrew,
   getCrewById,
   updateCrew,
   deleteCrew,
@@ -14,9 +15,13 @@ import { upload } from "../middlewares/upload";
 
 const router = express.Router();
 
-// Public routes (no authentication needed)
-router.get("/", getAllCrew);
-router.get("/:id", getCrewById);
+// Public route returns active team members only.
+router.get("/", getPublicCrew);
+
+// Admin reads must be declared before parameterised routes.
+router.get("/admin", authenticateJWT, requireAdmin, getAllCrew);
+router.get("/admin/:id", authenticateJWT, requireAdmin, getCrewById);
+router.put("/status/bulk", authenticateJWT, requireAdmin, updateCrewStatus);
 
 // Protected routes (require authentication)
 router.post("/", 

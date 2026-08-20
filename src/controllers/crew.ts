@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Crew from "../models/crew";
 import { uploadToCloudinary } from "../utils/cloudinary";
+import mongoose from "mongoose";
 
 export const createCrew = async (req: Request, res: Response) => {
   try {
@@ -17,9 +18,9 @@ export const createCrew = async (req: Request, res: Response) => {
     // Check duplicate email
     const existingCrew = await Crew.findOne({ email });
     if (existingCrew) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         success: false,
-        message: "Crew with this email already exists" 
+        message: "Crew with this email already exists"
       });
     }
 
@@ -36,11 +37,11 @@ export const createCrew = async (req: Request, res: Response) => {
     }
 
     // Create crew member
-    const crew = await Crew.create({ 
-      name, 
-      position, 
-      contact, 
-      email, 
+    const crew = await Crew.create({
+      name,
+      position,
+      contact,
+      email,
       description,
       image: imageUrl,
       status: status || "active"
@@ -67,10 +68,10 @@ export const createCrew = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Create crew error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Internal Server Error", 
-      error: (err as Error).message 
+      message: "Internal Server Error",
+      error: "Internal server error"
     });
   }
 };
@@ -78,14 +79,14 @@ export const createCrew = async (req: Request, res: Response) => {
 export const getAllCrew = async (req: Request, res: Response) => {
   try {
     const { status, search } = req.query;
-    
+
     let filter: any = {};
-    
+
     // Apply status filter if provided
     if (status) {
       filter.status = status;
     }
-    
+
     // Apply search filter if provided
     if (search) {
       filter.$or = [
@@ -94,9 +95,9 @@ export const getAllCrew = async (req: Request, res: Response) => {
         { email: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     const crew = await Crew.find(filter).sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       crew,
@@ -104,29 +105,42 @@ export const getAllCrew = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Error fetching crew:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: (err as Error).message 
+      error: "Internal server error"
     });
+  }
+};
+
+export const getPublicCrew = async (_req: Request, res: Response) => {
+  try {
+    const crew = await Crew.find({ status: "active" })
+      .select("name position contact email description image")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, crew, total: crew.length });
+  } catch (err) {
+    console.error("Error fetching public crew:", err);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
 
 export const getCrewById = async (req: Request, res: Response) => {
   try {
     const crew = await Crew.findById(req.params.id);
-    if (!crew) return res.status(404).json({ 
+    if (!crew) return res.status(404).json({
       success: false,
-      message: "Crew member not found" 
+      message: "Crew member not found"
     });
-    
+
     res.json({
       success: true,
       crew
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: (err as Error).message 
+      error: "Internal server error"
     });
   }
 };
@@ -134,23 +148,23 @@ export const getCrewById = async (req: Request, res: Response) => {
 export const updateCrew = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-
-    // Define restricted fields that cannot be updated
-    const restrictedFields = ['_id', 'createdAt', 'updatedAt', '__v'];
-    restrictedFields.forEach(field => delete updates[field]);
+    const updates: Record<string, unknown> = {};
+    const allowedFields = ["name", "position", "contact", "email", "description", "status"];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
 
     // Check if email is being updated and validate uniqueness
     if (updates.email) {
-      const existingCrew = await Crew.findOne({ 
-        email: updates.email, 
-        _id: { $ne: id } 
+      const existingCrew = await Crew.findOne({
+        email: updates.email,
+        _id: { $ne: id }
       });
-      
+
       if (existingCrew) {
-        res.status(409).json({ 
+        res.status(409).json({
           success: false,
-          message: "Crew with this email already exists" 
+          message: "Crew with this email already exists"
         });
         return;
       }
@@ -169,15 +183,15 @@ export const updateCrew = async (req: Request, res: Response): Promise<void> => 
     }
 
     const updatedCrew = await Crew.findByIdAndUpdate(
-      id, 
-      { $set: updates }, 
+      id,
+      { $set: updates },
       { new: true, runValidators: true }
     );
 
     if (!updatedCrew) {
-      res.status(404).json({ 
+      res.status(404).json({
         success: false,
-        message: "Crew member not found" 
+        message: "Crew member not found"
       });
       return;
     }
@@ -190,17 +204,17 @@ export const updateCrew = async (req: Request, res: Response): Promise<void> => 
 
   } catch (error: any) {
     if (error.name === 'ValidationError') {
-      res.status(400).json({ 
+      res.status(400).json({
         success: false,
-        error: "Validation Error", 
-        details: error.message 
+        error: "Validation Error",
+        details: "Validation failed"
       });
       return;
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: "Internal server error"
     });
   }
 };
@@ -208,22 +222,22 @@ export const updateCrew = async (req: Request, res: Response): Promise<void> => 
 export const deleteCrew = async (req: Request, res: Response) => {
   try {
     const crew = await Crew.findByIdAndDelete(req.params.id);
-    if (!crew) return res.status(404).json({ 
+    if (!crew) return res.status(404).json({
       success: false,
-      message: "Crew member not found" 
+      message: "Crew member not found"
     });
-    
+
     // Optional: Also delete associated user account
     // await User.findOneAndDelete({ email: crew.email });
-    
-    res.json({ 
+
+    res.json({
       success: true,
-      message: "Crew member deleted successfully" 
+      message: "Crew member deleted successfully"
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: (err as Error).message 
+      error: "Internal server error"
     });
   }
 };
@@ -232,28 +246,29 @@ export const deleteCrew = async (req: Request, res: Response) => {
 export const updateCrewStatus = async (req: Request, res: Response) => {
   try {
     const { ids, status } = req.body;
-    
-    if (!ids || !status) {
+
+    const validStatuses = ["active", "on-leave", "inactive"];
+    if (!Array.isArray(ids) || ids.length === 0 || !validStatuses.includes(status) || ids.some((id) => !mongoose.isValidObjectId(id))) {
       return res.status(400).json({
         success: false,
-        message: "IDs and status are required"
+        message: "Valid IDs and status are required"
       });
     }
-    
+
     const result = await Crew.updateMany(
       { _id: { $in: ids } },
       { $set: { status } }
     );
-    
+
     res.json({
       success: true,
       message: `${result.modifiedCount} crew members updated`,
       modifiedCount: result.modifiedCount
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: (err as Error).message 
+      error: "Internal server error"
     });
   }
 };

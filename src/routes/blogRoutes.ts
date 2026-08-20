@@ -9,8 +9,7 @@ import {
 } from "../controllers/blog";
 import { authenticateJWT } from "../middlewares/auth";
 import { requireAdmin } from "../middlewares/adminAuth";
-import { uploadSingleImage, processSingleImage } from "../middlewares/multer";
-import { uploadImages } from "../middlewares/testMulter";
+import { processBlogImage, upload } from "../middlewares/upload";
 
 
 const router = Router();
@@ -20,13 +19,9 @@ router.get("/published", getPublishedBlogs);
 router.get("/:id", getBlog);
 
 // Admin routes with image upload support
-router.post("/", authenticateJWT, requireAdmin, uploadImages.fields([
-  { name: "image", maxCount: 1 }
-]), createBlog);
+router.post("/", authenticateJWT, requireAdmin, upload.single("image"), processBlogImage, createBlog);
 
-router.put("/:id", authenticateJWT, requireAdmin, uploadImages.fields([
-  { name: "image", maxCount: 1 }
-]), updateBlog);
+router.put("/:id", authenticateJWT, requireAdmin, upload.single("image"), processBlogImage, updateBlog);
 
 router.delete("/:id", authenticateJWT, requireAdmin, deleteBlog);
 router.get("/", authenticateJWT, requireAdmin, getAllBlogs);

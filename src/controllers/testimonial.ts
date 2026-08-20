@@ -14,7 +14,7 @@ export const createTestimonial = async (req: Request, res: Response) => {
     const savedTestimonial = await testimonial.save();
     res.status(201).json(savedTestimonial);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -39,6 +39,6 @@ export const getTestimonials = async (req: Request, res: Response) => {
       pages: Math.ceil(total / limit),
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -4,7 +4,11 @@ import { uploadToCloudinary } from "../utils/cloudinary";
 // One shared multer instance for the whole app
 export const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 10,
+    fields: 30,
+  },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
@@ -30,6 +34,7 @@ export const processBlogImage = async (req: any, res: any, next: any) => {
     req.body.image = result.secure_url;
     next();
   } catch (err: any) {
-    res.status(500).json({ error: "Blog image upload failed", message: err.message });
+    console.error("Blog image upload failed:", err);
+    res.status(502).json({ message: "Blog image upload failed" });
   }
 };

@@ -47,7 +47,6 @@ const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
 );
 
 // Indexes for better query performance
-ProductSchema.index({ slug: 1 });
 ProductSchema.index({ name: "text", description: "text" });
 ProductSchema.index({ type: 1 });
 ProductSchema.index({ price: 1 });

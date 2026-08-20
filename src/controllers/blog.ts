@@ -5,8 +5,16 @@ import mongoose from "mongoose";
 // Create new blog with two image options
 export const createBlog = async (req: Request, res: Response) => {
   try {
-    const { title, description, image, thumbnailImage, tags, date, content, status } = req.body;
+    const { title, description, image, thumbnailImage, date, content, status } = req.body;
     const user = (req as any).user;
+
+    if (!title?.trim() || !description?.trim() || !image) {
+      return res.status(400).json({ message: "Title, description, and image are required" });
+    }
+
+    const tags = typeof req.body.tags === "string"
+      ? req.body.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
+      : Array.isArray(req.body.tags) ? req.body.tags : [];
 
     // Generate slug from title
     const slug = title
@@ -33,22 +41,31 @@ export const createBlog = async (req: Request, res: Response) => {
 
     res.status(201).json(blog);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 // Update blog
 export const updateBlog = async (req: Request, res: Response) => {
   try {
-    const updateData = req.body;
+    const updateData: Record<string, unknown> = {};
+    const allowedFields = ["title", "description", "image", "thumbnailImage", "date", "content", "status"];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updateData[field] = req.body[field];
+    }
+    if (req.body.tags !== undefined) {
+      updateData.tags = typeof req.body.tags === "string"
+        ? req.body.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
+        : Array.isArray(req.body.tags) ? req.body.tags : [];
+    }
     
     // Handle status changes
-    if (updateData.status === "published" && !req.body.publishedAt) {
+    if (updateData.status === "published") {
       updateData.publishedAt = new Date();
     }
     
     // Use thumbnailImage if provided for image field
-    if (updateData.thumbnailImage) {
+    if (typeof updateData.thumbnailImage === "string" && updateData.thumbnailImage) {
       updateData.image = updateData.thumbnailImage;
     }
     
@@ -61,16 +78,17 @@ export const updateBlog = async (req: Request, res: Response) => {
     if (!blog) return res.status(404).json({ message: "Blog not found" });
     res.json(blog);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 // Get blog by ID or slug
 export const getBlog = async (req: Request, res: Response) => {
   try {
-    const query = mongoose.Types.ObjectId.isValid(req.params.id) 
+    const identifier = mongoose.Types.ObjectId.isValid(req.params.id)
       ? { _id: req.params.id }
       : { slug: req.params.id };
+    const query = { ...identifier, status: "published" };
 
     const blog = await Blog.findOne(query)
       .populate("author", "username email")
@@ -94,7 +112,7 @@ export const getBlog = async (req: Request, res: Response) => {
 
     res.json(formattedBlog);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -153,7 +171,7 @@ export const getAllBlogs = async (req: Request, res: Response) => {
       pages: Math.ceil(total / parseInt(limit as string))
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -195,7 +213,7 @@ export const getPublishedBlogs = async (req: Request, res: Response) => {
       pages: Math.ceil(total / parseInt(limit as string))
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -206,6 +224,6 @@ export const deleteBlog = async (req: Request, res: Response) => {
     if (!blog) return res.status(404).json({ message: "Blog not found" });
     res.json({ message: "Blog deleted" });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -15,13 +15,13 @@ router.patch("/promote/:userId", authenticateJWT, requireAdmin, async (req, res)
       { role: "admin" },
       { new: true }
     ).select("-password");
-    
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
-    res.json({ 
-      message: "User promoted to admin", 
+
+    res.json({
+      message: "User promoted to admin",
       user: {
         _id: user._id,
         username: user.username,
@@ -30,7 +30,7 @@ router.patch("/promote/:userId", authenticateJWT, requireAdmin, async (req, res)
       }
     });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -40,13 +40,13 @@ router.get("/users", authenticateJWT, requireAdmin, async (req, res) => {
     const users = await User.find().select("-password");
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 router.get("/product/:productId/likes", authenticateJWT, requireAdmin, async (req, res) => {
   try {
     const { productId } = req.params;
-    
+
     const product = await Product.findById(productId)
       .populate({
         path: 'likes',
@@ -54,9 +54,9 @@ router.get("/product/:productId/likes", authenticateJWT, requireAdmin, async (re
       });
 
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
       });
     }
 
@@ -78,9 +78,9 @@ router.get("/product/:productId/likes", authenticateJWT, requireAdmin, async (re
       }))
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: (error as Error).message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 });
@@ -125,9 +125,9 @@ router.get("/stats/likes", authenticateJWT, requireAdmin, async (req, res) => {
       allProducts: productStats
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: (error as Error).message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 });
@@ -136,19 +136,19 @@ router.get("/stats/likes", authenticateJWT, requireAdmin, async (req, res) => {
 router.get("/user/:userId/liked-products", authenticateJWT, requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     // Check if user exists
     const user = await User.findById(userId).select('username email role');
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found" 
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
       });
     }
 
     // Find all products this user liked
-    const likedProducts = await Product.find({ 
-      likes: userId 
+    const likedProducts = await Product.find({
+      likes: userId
     }).select('name slug price images likeCount description');
 
     res.json({
@@ -174,9 +174,9 @@ router.get("/user/:userId/liked-products", authenticateJWT, requireAdmin, async 
       }))
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: (error as Error).message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 });
@@ -190,10 +190,10 @@ router.get("/analytics/power-users", authenticateJWT, requireAdmin, async (req, 
       { $group: {
           _id: "$likes",
           likeCount: { $sum: 1 },
-          products: { $push: { 
-            id: "$_id", 
-            name: "$name", 
-            price: "$price" 
+          products: { $push: {
+            id: "$_id",
+            name: "$name",
+            price: "$price"
           }}
       }},
       { $sort: { likeCount: -1 } },
@@ -225,9 +225,9 @@ router.get("/analytics/power-users", authenticateJWT, requireAdmin, async (req, 
       powerUsers: result
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: (error as Error).message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 });

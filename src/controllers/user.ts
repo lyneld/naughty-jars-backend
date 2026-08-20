@@ -1,25 +1,28 @@
 import User from "../models/user";
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// registerUser function
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { username, email, password, role } = req.body;
+    const username = typeof req.body.username === "string" ? req.body.username.trim() : "";
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body.password === "string" ? req.body.password : "";
 
-    const existingUser = await User.findOne({ email });
+    if (username.length < 3 || !EMAIL_PATTERN.test(email) || password.length < 8) {
+      return res.status(400).json({ message: "Invalid username, email, or password" });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser)
-      return res.status(400).json({ message: "Email already registered" });
-
-    // Prevent users from registering as admin by default
-    const userRole = role === "admin" ? "user" : (role || "user");
+      return res.status(409).json({ message: "Account already registered" });
 
     const user = await User.create({
       username,
       email,
-      password: password,
-      role: userRole,
+      password,
+      role: "user",
     });
 
     res.status(201).json({
@@ -30,19 +33,25 @@ export const registerUser = async (req: Request, res: Response) => {
       isAdmin: user.role === "admin"
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error("Register user error:", err);
+    res.status(500).json({ message: "Unable to register account" });
   }
 };
-// loginUser function
+
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body.password === "string" ? req.body.password : "";
+    if (!EMAIL_PATTERN.test(email) || !password) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const token = jwt.sign(
@@ -67,45 +76,7 @@ export const loginUser = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-};
-
-export const getUserProfile = async (req: Request, res: Response) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-};
-
-export const updateUserProfile = async (req: Request, res: Response) => {
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    }).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-};
-export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ message: "User deleted" });
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-};
-export const getAllUsers = async (req: Request, res: Response) => {
-  try {
-    const users = await User.find().select("-password");
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Unable to log in" });
   }
 };

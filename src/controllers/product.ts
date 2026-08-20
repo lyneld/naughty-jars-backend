@@ -1,20 +1,16 @@
 import Product from "../models/product";
 import { Request, Response } from "express";
-import { saveImages } from "../utils/saveImages";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import mongoose from "mongoose";
 
 export const addProduct = async (req: Request, res: Response) => {
   try {
-    console.log("Request body:", req.body);
-    console.log("Request files:", req.files);
-
-    const { 
-      name, 
-      description, 
-      price, 
-      weight, 
-      type, 
+    const {
+      name,
+      description,
+      price,
+      weight,
+      type,
       stock,
       tags,
       isFeatured,
@@ -23,13 +19,13 @@ export const addProduct = async (req: Request, res: Response) => {
 
     // Handle image uploads - for array uploads, req.files is an array directly
     let images: string[] = [];
-    
+
     // Check for uploaded files - now req.files is an array, not an object
     const files = req.files as Express.Multer.File[];
 
     if (files && files.length > 0) {
       images = await Promise.all(
-        files.map((file) => 
+        files.map((file) =>
           uploadToCloudinary(file.buffer, {
             folder: "products",
             width: 800,
@@ -42,9 +38,9 @@ export const addProduct = async (req: Request, res: Response) => {
 
     // Validation
     if (!name || !price || !description || !weight || !type) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Name, price, description, weight, and type are required fields" 
+      return res.status(400).json({
+        success: false,
+        message: "Name, price, description, weight, and type are required fields"
       });
     }
 
@@ -66,10 +62,10 @@ export const addProduct = async (req: Request, res: Response) => {
     }
 
     // Create product
-    const product = await Product.create({ 
+    const product = await Product.create({
       name: name.trim(),
       slug,
-      description: description.trim(), 
+      description: description.trim(),
       price: parseFloat(price),
       weight: weight.trim(),
       type: type.trim(),
@@ -105,24 +101,28 @@ export const addProduct = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Create product error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
-  try { 
+  try {
     const { id } = req.params;
-    const updates: any = { ...req.body };
-    
+    const updates: Record<string, any> = {};
+    const allowedFields = ["name", "description", "price", "weight", "type", "stock", "tags", "isFeatured", "status"];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
+
     // Handle image uploads for update - now req.files is an array
     const files = req.files as Express.Multer.File[];
 
     if (files && files.length > 0) {
       const newImages = await Promise.all(
-        files.map((file) => 
+        files.map((file) =>
           uploadToCloudinary(file.buffer, {
             folder: "products",
             width: 800,
@@ -131,7 +131,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           }).then((r) => r.secure_url)
         )
       );
-      
+
       // Get existing images from request or keep existing
       let existingImages: string[] = [];
       if (req.body.existingImages) {
@@ -141,7 +141,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           existingImages = [];
         }
       }
-      
+
       // Combine existing and new images
       updates.images = [...existingImages, ...newImages];
     } else {
@@ -155,31 +155,39 @@ export const updateProduct = async (req: Request, res: Response) => {
         delete updates.images;
       }
     }
-    
+
     // Handle numeric fields
-    if (updates.price) updates.price = parseFloat(updates.price);
-    if (updates.stock) updates.stock = parseInt(updates.stock);
-    if (updates.reviews) updates.reviews = parseInt(updates.reviews);
-    
+    if (updates.price !== undefined) updates.price = parseFloat(updates.price);
+    if (updates.stock !== undefined) updates.stock = parseInt(updates.stock);
+
     // Handle tags if provided as string
     if (updates.tags && typeof updates.tags === 'string') {
       updates.tags = updates.tags.split(',').map((tag: string) => tag.trim());
     }
-    
+
     // Handle boolean field
     if (updates.isFeatured !== undefined) {
       updates.isFeatured = updates.isFeatured === 'true' || updates.isFeatured === true;
+    }
+
+    if (typeof updates.name === "string") {
+      updates.name = updates.name.trim();
+      updates.slug = updates.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
     }
 
     const product = await Product.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true
     });
-    
+
     if (!product) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Product not found" 
+        message: "Product not found"
       });
     }
 
@@ -200,7 +208,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       status: product.status,
       createdAt: product.createdAt.toISOString()
     };
-    
+
     res.json({
       success: true,
       message: "Product updated successfully",
@@ -208,9 +216,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Update product error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
@@ -220,20 +228,20 @@ export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Product not found" 
+        message: "Product not found"
       });
     }
-    res.json({ 
+    res.json({
       success: true,
-      message: "Product deleted successfully" 
+      message: "Product deleted successfully"
     });
   } catch (err: any) {
     console.error("Delete product error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
@@ -241,34 +249,22 @@ export const deleteProduct = async (req: Request, res: Response) => {
 export const getProductDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
-    const userRole = (req as any).user?.role;
-
     // Check if it's a valid ObjectId format
     const isValidObjectId = mongoose.Types.ObjectId.isValid(id);
-    
+
     let product;
     if (isValidObjectId) {
-      // If admin, populate likes with user details
-      if (userRole === 'admin') {
-        product = await Product.findById(id)
-          .populate({
-            path: 'likes',
-            select: 'username email role createdAt'
-          });
-      } else {
-        product = await Product.findById(id);
-      }
+      product = await Product.findOne({ _id: id, status: "published" });
     }
-    
+
     if (!product) {
-      product = await Product.findOne({ slug: id });
+      product = await Product.findOne({ slug: id, status: "published" });
     }
-    
+
     if (!product) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Product not found" 
+        message: "Product not found"
       });
     }
 
@@ -289,44 +285,28 @@ export const getProductDetails = async (req: Request, res: Response) => {
       status: product.status,
       createdAt: product.createdAt.toISOString(),
       likeCount: product.likeCount || 0,
-      liked: userId ? product.likes?.some((like: any) => 
-        like._id ? like._id.toString() === userId : like.toString() === userId
-      ) : false
+      liked: false
     };
 
-    // If admin, include detailed like information
-    if (userRole === 'admin' && product.likes) {
-      formattedProduct.likesDetails = {
-        total: product.likeCount || 0,
-        users: product.likes.map((user: any) => ({
-          id: user._id || user,
-          username: user.username || 'Unknown',
-          email: user.email || 'No email',
-          role: user.role || 'user',
-          likedAt: user.createdAt || null
-        }))
-      };
-    }
-    
     res.json({
       success: true,
       product: formattedProduct
     });
   } catch (err: any) {
     console.error("Get product details error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { 
-      type, 
-      minPrice, 
-      maxPrice, 
+    const {
+      type,
+      minPrice,
+      maxPrice,
       search,
       page = 1,
       limit = 20,
@@ -334,28 +314,28 @@ export const getAllProducts = async (req: Request, res: Response) => {
       tags,
       status
     } = req.query;
-    
+
     const filter: any = {};
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     // Apply filters
     if (type) filter.type = type;
     if (featured === 'true') filter.isFeatured = true;
     if (status) filter.status = status;
-    
+
     // Price range filter
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = parseFloat(minPrice as string);
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice as string);
     }
-    
+
     // Tag filter
     if (tags) {
       const tagArray = Array.isArray(tags) ? tags : [tags];
       filter.tags = { $in: tagArray };
     }
-    
+
     // Search filter
     if (search) {
       filter.$or = [
@@ -364,7 +344,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         { tags: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     const [products, total] = await Promise.all([
       Product.find(filter)
         .sort({ createdAt: -1 })
@@ -390,7 +370,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
       status: product.status,
       createdAt: product.createdAt.toISOString()
     }));
-    
+
     res.json({
       success: true,
       products: formattedProducts,
@@ -403,9 +383,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Get all products error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
@@ -413,31 +393,31 @@ export const getAllProducts = async (req: Request, res: Response) => {
 // Get published products for frontend
 export const getPublishedProducts = async (req: Request, res: Response) => {
   try {
-    const { 
-      page = 1, 
-      limit = 12, 
+    const {
+      page = 1,
+      limit = 12,
       type,
       minPrice,
       maxPrice,
       search,
       featured
     } = req.query;
-    
+
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     const filter: any = { status: "published" };
-    
+
     // Apply filters
     if (type) filter.type = type;
     if (featured === 'true') filter.isFeatured = true;
-    
+
     // Price range filter
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = parseFloat(minPrice as string);
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice as string);
     }
-    
+
     // Search filter
     if (search) {
       filter.$or = [
@@ -484,16 +464,16 @@ export const getPublishedProducts = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Get published products error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };
 
 export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find({ 
+    const products = await Product.find({
       isFeatured: true,
       status: "published"
     })
@@ -512,16 +492,16 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
       type: product.type,
       createdAt: product.createdAt.toISOString()
     }));
-    
+
     res.json({
       success: true,
       products: formattedProducts
     });
   } catch (err: any) {
     console.error("Get featured products error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: err.message 
+      error: "Internal server error"
     });
   }
 };

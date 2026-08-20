@@ -18,6 +18,7 @@ const BlogSchema: Schema<IBlog> = new Schema<IBlog>(
     title: { type: String, required: true },
     description: { type: String, required: true },
     image: { type: String, required: true },
+    thumbnailImage: { type: String },
     tags: [{ type: String }],
     date: { type: String, required: true },
     author: { type: Schema.Types.ObjectId, ref: "User", required: true },

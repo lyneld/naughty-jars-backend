@@ -10,9 +10,11 @@ export const authenticateJWT = (
   if (!token)
     return res.status(401).json({ message: "Authentication required" });
 
-  jwt.verify(token, process.env.JWT_SECRET!, (err, user) => {
-    if (err) return res.status(403).json({ message: "Invalid token" });
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET!);
     (req as any).user = user;
     next();
-  });
+  } catch {
+    return res.status(403).json({ message: "Invalid token" });
+  }
 };

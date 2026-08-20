@@ -1,69 +1,32 @@
-# Naughty Jars --SERVER
+# Naughty Jars API
 
-## 🚀 Quick Start
+Express 5 and TypeScript API backed by MongoDB/Mongoose. Product, crew, and blog media is stored in Cloudinary.
 
-### Prerequisites
+## Local development
 
-- Node.js 18+ (use [nvm](https://github.com/nvm-sh/nvm))
-- npm or yarn
-
-### Installation
+Use Node.js 22.23.1 or a newer Node 22 release, copy `.env.example` to `.env`, supply the required credentials, and run:
 
 ```bash
-git clone <YOUR_GIT_URL>
-cd NJ-server
-npm install
-npm start
+npm ci
+npm run dev
 ```
 
-Open [http://localhost:5001]
+The API listens on `127.0.0.1:5000` by default. The frontend Vite server proxies `/api` to this address.
 
-## 🏗️ Tech Stack
-
-    Express Js + TypeScript
-    Multer + Sharp -- file uploads and optimization
-    JWT -- simple auth
-    Stripe -- PG
-
-## 📁 Project Structure
-
-```
-/src
-  /controllers
-    - authController.ts
-    - productController.ts
-  /middleware
-    - auth.ts
-    - multer.ts
-  /models
-    - User.ts
-    - Product.ts
-  /routes
-    - authRoutes.ts
-    - productRoutes.ts
-  - app.ts
-  - server.ts
-
-```
-
-### Available Scripts
+## Checks
 
 ```bash
-npm run dev          # Start dev server (http://localhost:8080)
-npm run build        # Production build
-npm run build:dev    # Development build
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
+npm test
+npm run build
+npm audit --omit=dev
 ```
 
-### Environment Variables
+`GET /api/health/live` reports process liveness. `GET /api/health/ready` returns 200 only while MongoDB is connected.
 
-Create a `.env` file in the root directory (see `.env.example`):
+## Administrative scripts
 
-```env
-VITE_GA_ID=G-XXXXXXXXX
-VITE_META_PIXEL_ID=XXXXXXXXXXXXX
-VITE_API_URL=https://api.nextdoclabs.com
-```
+- `npm run seed:admin` creates the first administrator from `ADMIN_USERNAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`. It does not contain default credentials.
+- `npm run seed:products` replaces all products and therefore also requires `ALLOW_DESTRUCTIVE_SEED=true`.
+- `npm run audit:media` reports legacy `/uploads/` database references. Review its output before using `npm run migrate:media`.
 
-## 🚀 Deployment
+The OCI, Caddy, PM2, release, rollback, and Render cutover instructions are in [`deploy/README.md`](deploy/README.md).

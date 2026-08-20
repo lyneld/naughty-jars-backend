@@ -9,21 +9,21 @@ export const likeProduct = async (req: Request, res: Response) => {
     const userId = (req as any).user.id; // Get user ID from JWT
 
     const product = await Product.findById(productId);
-    
+
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
       });
     }
 
     // Check if user already liked this product
     const alreadyLiked = product.likes.includes(userId);
-    
+
     if (alreadyLiked) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Product already liked" 
+      return res.status(400).json({
+        success: false,
+        message: "Product already liked"
       });
     }
 
@@ -40,9 +40,9 @@ export const likeProduct = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Like product error:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 };
@@ -54,21 +54,21 @@ export const unlikeProduct = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
 
     const product = await Product.findById(productId);
-    
+
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
       });
     }
 
     // Check if user has liked this product
     const likeIndex = product.likes.indexOf(userId);
-    
+
     if (likeIndex === -1) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Product not liked yet" 
+      return res.status(400).json({
+        success: false,
+        message: "Product not liked yet"
       });
     }
 
@@ -85,9 +85,9 @@ export const unlikeProduct = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Unlike product error:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 };
@@ -99,11 +99,11 @@ export const checkUserLike = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
 
     const product = await Product.findById(productId).select('likes');
-    
+
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
       });
     }
 
@@ -116,9 +116,9 @@ export const checkUserLike = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Check like error:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 };
@@ -128,19 +128,19 @@ export const getUserLikedProducts = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { page = 1, limit = 20 } = req.query;
-    
+
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const products = await Product.find({ 
+    const products = await Product.find({
       likes: userId,
-      status: "published" 
+      status: "published"
     })
     .skip(skip)
     .limit(parseInt(limit as string));
 
-    const total = await Product.countDocuments({ 
+    const total = await Product.countDocuments({
       likes: userId,
-      status: "published" 
+      status: "published"
     });
 
     // Format products
@@ -167,9 +167,9 @@ export const getUserLikedProducts = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Get liked products error:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error"
     });
   }
 };
